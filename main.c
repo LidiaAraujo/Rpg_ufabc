@@ -1,20 +1,3 @@
-    // FILE *fp;
-    // FILE *usersWrite;
-    // FILE *usersRead;
-    // char nome[MAX_TAMANHO_NOME];
-    // char aux[MAX_TAMANHO_NOME];
-    // char c;
-    //if( fp == NULL){
-        //printf("Erro na abertura do arquivo.\n");
-    //} 
-
-    //while((c = fgetc(fp)) != EOF){
-        //printf("%c", c);
-   // }
-
-    //fclose(fp);
-
-    
 //Bibliotecas
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,8 +9,99 @@
 #define OPCOES_DIA 3
 #define OPCOES_MENU 4
 #define MAX_TAMANHO_NOME 150
+#define VALOR_PROVA 10
 
 int sair = 0;
+int final = 0;
+
+//Lista dinâmica
+struct listadinamica
+{
+	char palavra [MAX_TAMANHO_DA_PALAVRA];
+	struct listadinamica *p;
+	
+};
+
+typedef struct listadinamica Item;
+typedef struct listadinamica* listadef;
+
+listadef *crialistadinamica (){
+	listadef *plista;
+	plista = (listadef*) malloc (sizeof(listadef));
+	
+	if (plista != NULL)
+	{
+		*plista = NULL;
+	}
+	
+	return plista;
+}
+
+void escrevelistadinamicaf(listadef *ponteiro, char n[MAX_TAMANHO_DA_PALAVRA]) {
+	Item *no;
+	no = (Item*) malloc (sizeof(Item));
+	strcpy(no->palavra, n);
+	no->p = (*ponteiro);
+	*ponteiro = no;
+
+}
+
+int qtd_itens(listadef *p){
+	int cont = 0;
+	Item *no = *p;
+
+	while (no != NULL)
+	{
+		cont++;
+		no=no->p;
+	}
+	
+	return cont;
+}
+
+void ler_lista(listadef *p){
+	Item *no = *p;
+
+	for (int i = 0; i< qtd_itens(p); i++){
+		criarlinha(40);
+		printf("(%d) %s\n", i, no->palavra);
+		no=no->p;
+	}
+	criarlinha(40);
+}
+
+int remover_elemento(listadef *p, char n [MAX_TAMANHO_DA_PALAVRA]){
+	
+	if ((p == NULL) || ((*p)  == NULL)) {
+		return 0;
+	} else {
+		Item *no_atual, *no_ant;
+		no_atual = *p;
+
+		while(no_atual != NULL && no_atual->palavra != n){
+			if (strcmp(no_atual->palavra, n) == 0) {
+				break;
+			}
+			no_ant = no_atual;
+			no_atual = no_atual->p;
+		}
+
+		if (no_atual == 0) {
+			return 2; //Se retornar 2 não achou o elemento
+		} else {
+			if (no_atual == *p) {
+				*p = no_atual->p;
+			} else {
+				no_ant->p = no_atual->p;
+			}
+
+		}
+		free(no_atual);
+		return 1;
+	}
+
+
+}
 
 
 struct protag
@@ -35,15 +109,15 @@ struct protag
     char nome[MAX_TAMANHO_DA_PALAVRA];
     int energia;
     int estudo;
-    //int item;
     int social;
     int dinheiro;
     int saude;
     int dia_atual;
+    int nota;
+    listadef *listaitem;
 };
 
 struct protag protagonista;
-
 
 //Seção menus
 void criarlinha(int n) {
@@ -73,10 +147,12 @@ void Protagonista(){
         fgets(protagonista.nome, MAX_TAMANHO_DA_PALAVRA, stdin);
     
     protagonista.energia = 10;
-    protagonista.dinheiro = 20;
+    protagonista.dinheiro = 10;
     protagonista.estudo = 0;
     protagonista.saude = 10;
     protagonista.social = 0;
+    protagonista.nota = 0;
+    protagonista.listaitem = crialistadinamica();
 }
 
 //Lê os créditos
@@ -95,6 +171,65 @@ void LerInicio(){
 
 //Compra de itens nos dias comuns
 void ItemDias(){
+    int aux;
+    fflush(stdin);
+
+    printf("Compre itens para usar na hora da prova! Voce tem %d de dinheiro sobrando\n", protagonista.dinheiro);
+
+    char itens[NUMERO_ITENS][MAX_TAMANHO_DA_PALAVRA] = {"Cafe (+2 de energia) - 2 reais", "Barrinha de cereal (+5 de energia) - 5 reais", "Livro didatico (+3 de estudo) - 10 reais", "Folha de resposta (+10 de ... estudo?) - 20 reais", "To so dando uma olhadinha (voltar ao menu)"};
+    imprimeListaDePalavras(itens, NUMERO_ITENS);
+
+    scanf("%d", &aux);
+
+    switch (aux)
+    {
+    case 0:
+        //café
+        if (protagonista.dinheiro >= 2) {
+            printf("Voce comprou um cafe!\n");
+            protagonista.dinheiro -= 2;
+            escrevelistadinamicaf(protagonista.listaitem, "Cafe (+2 de energia)");
+        } else {
+            printf("Sem dinheiro o suficiente! (Saldo restante: %d reais)\n", protagonista.dinheiro);
+        }
+        break;
+    case 1:
+        //Barrinha
+        if (protagonista.dinheiro >= 5) {
+            printf("Voce comprou uma barrinha de cereal!\n");
+            protagonista.dinheiro -= 5;    
+            escrevelistadinamicaf(protagonista.listaitem, "Barrinha de cereal (+5 de energia)");
+        } else {
+            printf("Sem dinheiro o suficiente! (Saldo restante: %d reais)\n", protagonista.dinheiro);
+        }
+        break;
+    case 2:
+        //livro
+        if (protagonista.dinheiro >= 10) {
+            printf("Voce comprou um livro didatico!\n");
+            protagonista.dinheiro -= 10;
+            escrevelistadinamicaf(protagonista.listaitem, "Livro didatico (+3 de estudo)");
+        } else {
+            printf("Sem dinheiro o suficiente! (Saldo restante: %d reais)\n", protagonista.dinheiro);
+        }
+        break;
+    case 3:
+        //Respostas
+        if (protagonista.dinheiro >= 20) {
+            printf("Voca comprou uma folha de respostas!\n");
+            protagonista.dinheiro -=20;
+            escrevelistadinamicaf(protagonista.listaitem, "Folha de resposta (+10 de ... estudo?)");
+        } else {
+            printf("Sem dinheiro o suficiente! (Saldo restante: %d reais)\n", protagonista.dinheiro);
+        }
+        break;
+    case 4:
+        break;
+    default:
+        printf("Houve um erro, por favor digite novamente\n");
+        ItemDias();
+        break;
+    }
 
 }
 
@@ -210,13 +345,88 @@ void AcoesDias(){
 
 }
 
-//Sistema de provas
-void Prova(){
 
+//Sistema de provas
+void Prova(int dia){
+    int vida_prova, aux, continua = 0, maxprova, r;
+    char prova[3][MAX_TAMANHO_DA_PALAVRA] = {"Tentar responder as questoes (-1 energia)", "Usar um item", "Desisto!"};
+
+    if(dia <= 4) {
+            printf("Hora da prova 1!\n");
+            maxprova = VALOR_PROVA;
+    } else {
+            printf("Hora da prova final!\n");
+            maxprova = VALOR_PROVA*2;
+    }
+    
+    vida_prova = maxprova;
+
+    while (continua == 0){
+
+        if (protagonista.energia <= 0)
+        {
+            break;
+        }
+        
+
+        printf("Ainda faltam %d de %d questoes\nVoce tem %d de energia sobrando\n", vida_prova, maxprova, protagonista.energia);
+
+        imprimeListaDePalavras(prova, 3);
+        scanf("%d", &aux);
+
+        switch (aux)
+        {
+        case 0:
+            r = (rand() % 4) + 0.5*protagonista.estudo;
+            vida_prova = vida_prova - r;
+            printf("Voce conseguiu fazer %d questoes\n", r);
+            break;
+        
+        case 1:
+            itemprova();
+            break;
+        case 2:
+            printf("Voce desistiu de fazer a prova. Acontece\n");
+            protagonista.energia = -1;
+            continua = 1;
+        default:
+
+            break;
+        }
+
+        if (vida_prova <= 0) {
+            continua = 1;
+        } else {
+            protagonista.energia--;
+        }
+    }
+
+    if (protagonista.energia >= 0) {
+        printf("Voce terminou a prova!\n");
+        protagonista.nota++;
+    } else {
+        printf("Voce nao conseguiu terminar a prova\n");
+    }
+}
+
+void itemprova(){
+    int aux;
+
+    if (qtd_itens(protagonista.listaitem) < 0) {
+        printf("Voce nao tem nenhum item!\n");
+    } else {
+        ler_lista(protagonista.listaitem);
+
+        printf("Que item voce quer utilizar?\n");
+        fflush(stdin);
+        scanf("%d", &aux);
+    
+        
+    }
 }
 
 void Final(){
-
+    //Se nota = 0 -> reprosvou as duas / nota = 1 -> passou em uma / se nota = 2 -> Passou nas duas
 }
 
 //Exibe a tela de início
@@ -290,12 +500,13 @@ void passagemDasSemanas(int dia, char s){
             }
             printf("Voce esta no dia %d/7\n", dia);
             if (dia == 3 || dia == 7) {
-                Prova();
+                Prova(dia);
             } else {
-                dias();
-                protagonista.energia = 10;
-                protagonista.saude -= 2;                
+                dias();                
             }
+
+            protagonista.energia = 10;
+            protagonista.saude -= 2;
 
             fflush(stdin);
             printf("Pronto para o proximo dia? (s ou n)\n");
@@ -313,6 +524,11 @@ void passagemDasSemanas(int dia, char s){
                 protagonista.dia_atual = dia;
                 Salvar();
             }
+
+            if (dia >= 7){
+                final = 1;
+                break;
+            }
     }
 }
 
@@ -327,15 +543,19 @@ void main(){
     char s;
     LerInicio();
 
-    while(sair == 0) {
+    while(sair == 0 || final == 0) {
         int carregado = tela();
         int dia = determinarDia(carregado);
         passagemDasSemanas(dia, s);
+    }
+
+    if (final == 1) {
         Final();
+        printf("Obrigado por jogar!");
+        LerCreditos();
     }
 
     printf("BYE BYE");
 
 }
-
 
